@@ -76,27 +76,19 @@ source "vsphere-iso" "debian_12" {
     "<down><down><down><down><down><down><enter>",
     "<wait40>",
     "file:///mnt/cdrom2/preseed.cfg",
-    # go to terminal tty2 for CLI
-    # XXX: this Alt-F2 keystroke is coming out unrecognized - https://github.com/cirruslabs/packer-plugin-tart/issues/71
+     #Open Shell and mount cdrom
     "<leftAltOn><f2><leftAltOff><wait2s>",
-    # 'Press enter to activate this console' - drops into a Busybox shell
     "<enter><wait>",
     "mkdir /mnt/cdrom2<enter>",
     "mount /dev/sr1 /mnt/cdrom2<enter>",
-    # go back to tty1
-    # XXX: this Alt-F1 keystroke is coming out unrecognized
+    # go back to install menu
     "<leftAltOn><f1><leftAltOff>",
-    # TODO: rest of keystrokes once F2 issue is resolved
-    # 'Load drives from removable media?' -> No
     "<right><enter><wait>",
-    # 'Manually select a module and device for instation media?' -> Yes
     "<enter><wait>",
-    # none, cdrom - press down and enter to select second option
     "<down><enter>",
   ]
   cd_files = ["./preseed.cfg"]
   cd_label = "cidata"
-  floppy_files          = ["./preseed.cfg"]
   boot_wait           = "2s"
   CPUs                = 1
   cpu_cores           = 2
@@ -107,10 +99,10 @@ source "vsphere-iso" "debian_12" {
   iso_checksum        = "sha256:23ab444503069d9ef681e3028016250289a33cc7bab079259b73100daee0af66"
   iso_urls            = ["iso/debian-12.2.0-amd64-netinst.iso", "https://chuangtzu.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso"]
   RAM                 = 4096
-  shutdown_command    = "poweroff"
-  ssh_password        = "packer"
+  shutdown_command    = "echo debian | sudo -S poweroff"
+  ssh_password        = "debian"
   ssh_port            = 22
-  ssh_username        = "packer"
+  ssh_username        = "debian"
   ssh_wait_timeout    = "20m"
   vm_name             = "debian-12.2"
   network_adapters {
