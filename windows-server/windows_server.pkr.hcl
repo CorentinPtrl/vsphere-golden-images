@@ -1,70 +1,116 @@
 packer {
   required_plugins {
-    vmware = {
-      source  = "github.com/hashicorp/vmware"
+    vsphere = {
+      source  = "github.com/hashicorp/vsphere"
       version = "~> 1"
     }
   }
 }
 
-variable "esxi_datastore" {
-  type = string
+variable "vcenter_server" {
+  type    = string
+  description = "The fully qualified domain name or IP address of the vCenter Server instance."
+  default = ""
 }
 
-variable "esxi_host" {
-  type = string
+variable "vcenter_username" {
+  type    = string
+  description = "The username for authenticating to vCenter."
+  default = ""
+  sensitive = true
 }
 
-variable "esxi_password" {
-  type = string
+variable "vcenter_password" {
+  type    = string
+  description = "The plaintext password for authenticating to vCenter."
+  default = ""
+  sensitive = true
 }
 
-variable "esxi_username" {
-  type = string
+variable "vcenter_datacenter" {
+  type    = string
+  description = "Required if there is more than one datacenter in vCenter."
+  default = ""
 }
 
-source "vmware-iso" "WindowsServer-2022-Datacenter" {
-  floppy_files        = ["config/autounattend.xml", "scripts/ssh_server.ps1", "scripts/enable-winrm.ps1"]
+variable "vcenter_host" {
+  type = string
+  description = "The ESXi host where target VM is created."
+  default = ""
+}
+
+variable "vcenter_datastore" {
+  type    = string
+  description = "Required for clusters, or if the target host has multiple datastores."
+  default = ""
+}
+
+variable "vcenter_network" {
+  type    = string
+  description = "The network segment or port group name to which the primary virtual network adapter will be connected."
+  default = ""
+}
+
+variable "vcenter_folder" {
+  type    = string
+  description = "The VM folder in which the VM template will be created."
+  default = ""
+}
+
+source "vsphere-iso" "WindowsServer-2022-Datacenter" {
+  vcenter_server      = var.vcenter_server
+  username            = var.vcenter_username
+  password            = var.vcenter_password
+  datacenter          = var.vcenter_datacenter
+  datastore           = var.vcenter_datastore
+  host                = var.vcenter_host
+  folder              = var.vcenter_folder
+  insecure_connection = true
+
+  floppy_files        = ["config/autounattend.xml", "scripts/ssh_server.ps1", "scripts/enable-winrm.ps1", "scripts/install_vmware_tools.ps1"]
+  tools_upgrade_policy = true
   communicator        = "winrm"
-  cpus                = 2
-  disk_adapter_type = "lsisas1068"
-  disk_size           = 80560
-  format              = "ova"
-  guest_os_type       = "windows2019srvNext-64"
-  headless            = true
+  CPUs                = 1
+  cpu_cores           = 2
+  disk_controller_type = ["pvscsi"]
+  storage {
+        disk_size = 80000
+  }
+  guest_os_type       = "windows2019srvNext_64Guest"
   iso_checksum        = "sha256:3e4fa6d8507b554856fc9ca6079cc402df11a8b79344871669f0251535255325"
   iso_urls            = ["iso/SERVER_EVAL_x64FRE_en-us.iso", "https://software-static.download.prss.microsoft.com/sg/download/888969d5-f34g-4e03-ac9d-1f9786c66749/SERVER_EVAL_x64FRE_en-us.iso"]
-  keep_registered     = true
-  memory              = 4096
-  remote_datastore    = "${var.esxi_datastore}"
-  remote_host         = "${var.esxi_host}"
-  remote_password     = "${var.esxi_password}"
-  remote_type         = "esx5"
-  remote_username     = "${var.esxi_username}"
+  iso_paths = [
+    "[] /usr/lib/vmware/isoimages/windows.iso"
+  ]
+  RAM              = 4096
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\""
-  skip_export         = false
-  tools_upload_flavor = "windows"
   winrm_password   = "Passw0rd"
   winrm_timeout    = "20m"
   winrm_username   = "Administrator"
-  vm_name             = "WindowsServer-2022-Datacenter"
-  vmx_data = {
-    "ethernet0.networkName" = "PfSense_LAN"
+  vm_name          = "WindowsServer-2022-Datacenter"
+  network_adapters {
+    network = "pfSense_LAN"
   }
-  vnc_over_websocket = true
 }
 
 build {
-  sources = ["source.vmware-iso.WindowsServer-2022-Datacenter"]
+  sources = ["source.vsphere-iso.WindowsServer-2022-Datacenter"]
 
   provisioner "powershell" {
     elevated_user = "Administrator"
     elevated_password = build.Password
     scripts = ["scripts/ssh_server.ps1"]
   }
-
-  provisioner "windows-shell" {
-    inline = ["d:/setup64 /s /v \"/qb REBOOT=R\""]
-    valid_exit_codes = [3010]
-  }
+  
+  post-processors {
+      post-processor "vsphere-template" {   
+          host                = var.vcenter_server
+          insecure            = true
+          username            = var.vcenter_username
+          password            = var.vcenter_password
+          datacenter          = var.vcenter_datacenter
+          folder              = var.vcenter_folder
+          reregister_vm       = true
+      }
+    }
 }
