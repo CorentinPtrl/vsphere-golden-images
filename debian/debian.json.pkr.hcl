@@ -87,7 +87,7 @@ source "vsphere-iso" "debian_12" {
     "<enter><wait>",
     "<down><enter>",
   ]
-  cd_files = ["./preseed.cfg"]
+  cd_files = ["${path.root}/preseed.cfg"]
   cd_label = "cidata"
   boot_wait           = "2s"
   CPUs                = 1
