@@ -87,19 +87,19 @@ source "vsphere-iso" "debian_12" {
     "<enter><wait>",
     "<down><enter>",
   ]
-  cd_files = ["${path.root}/preseed.cfg"]
+  cd_files = ["${path.root}/preseed.cfg", "${path.root}/setup.sh", "${path.root}/resize"]
   cd_label = "cidata"
   boot_wait           = "2s"
   CPUs                = 1
   cpu_cores           = 2
   storage {
-        disk_size = 15000
+        disk_size = 20000
   }
   guest_os_type       = "ubuntu64Guest"
   iso_checksum        = "sha256:23ab444503069d9ef681e3028016250289a33cc7bab079259b73100daee0af66"
   iso_urls            = ["iso/debian-12.2.0-amd64-netinst.iso", "https://chuangtzu.ftp.acc.umu.se/debian-cd/current/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso"]
   RAM                 = 4096
-  shutdown_command    = "echo debian | sudo -S poweroff"
+  shutdown_command    = "echo debian | sudo -S /bin/bash /srv/setup.sh"
   ssh_password        = "debian"
   ssh_port            = 22
   ssh_username        = "debian"

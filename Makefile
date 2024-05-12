@@ -10,4 +10,4 @@ help:						## Show this help
 
 deploy:
 	packer build -force -var "vcenter_folder=/templates/os/debian" debian/debian.json.pkr.hcl
-	packer build -force -var "vcenter_folder=/templates/os/windows" windows-server/windows_server.pkr.hcl
+#	packer build -force -var "vcenter_folder=/templates/os/windows" windows-server/windows_server.pkr.hcl

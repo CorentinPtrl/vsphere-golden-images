@@ -1,0 +1,11 @@
+#! /bin/bash
+
+sudo growpart /dev/sda 2
+sudo growpart /dev/sda 5
+sudo resize2fs /dev/sda5
+
+sudo rm -f /etc/ssh/*_key*
+sudo dpkg-reconfigure openssh-server
+
+sudo rm -f /etc/init.d/resize
+sudo crontab -r
